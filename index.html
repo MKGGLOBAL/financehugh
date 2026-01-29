@@ -272,6 +272,12 @@
         .auth-switch { margin-top: 24px; font-size: 14px; color: var(--text-secondary); }
         .auth-switch a { color: var(--accent-orange); text-decoration: none; font-weight: 500; cursor: pointer; }
         .auth-switch a:hover { text-decoration: underline; }
+        .pin-input-container { display: flex; justify-content: center; gap: 12px; margin: 24px 0; }
+        .pin-input { width: 60px; height: 70px; text-align: center; font-size: 28px; font-weight: 700; background: var(--bg-input); border: 2px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); transition: all 0.2s; }
+        .pin-input:focus { outline: none; border-color: var(--accent-orange); box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2); }
+        .pin-input.filled { border-color: var(--accent-green); background: rgba(0, 214, 143, 0.1); }
+        .pin-input.error { border-color: var(--accent-red); animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
         .analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
         .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
         .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 24px; }
@@ -325,16 +331,21 @@
                 <button class="btn btn-secondary" style="width: 100%;" onclick="useLocalMode()">Use Offline Mode</button>
             </div>
             <div id="loginSection">
-                <h3 class="auth-title" id="authTitle">Welcome to FinanceHub</h3>
-                <p class="auth-subtitle" id="authSubtitle">Sign in or create an account to get started</p>
-                <form id="authForm">
-                    <div class="form-group" style="text-align: left;"><label class="form-label">Email</label><input type="email" class="form-input" id="authEmail" placeholder="you@example.com" required></div>
-                    <div class="form-group" style="text-align: left;"><label class="form-label">Password</label><input type="password" class="form-input" id="authPassword" placeholder="••••••••" required></div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;"><span id="authBtnText">Sign In</span></button>
+                <h3 class="auth-title" id="authTitle">Enter PIN</h3>
+                <p class="auth-subtitle" id="authSubtitle">Enter your 4-digit PIN to access</p>
+                <form id="pinForm">
+                    <div class="form-group">
+                        <div class="pin-input-container">
+                            <input type="password" class="pin-input" id="pin1" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                            <input type="password" class="pin-input" id="pin2" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                            <input type="password" class="pin-input" id="pin3" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                            <input type="password" class="pin-input" id="pin4" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                        </div>
+                    </div>
+                    <p id="pinError" style="color: var(--accent-red); font-size: 13px; margin-bottom: 16px; display: none;">Incorrect PIN. Try again.</p>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;" id="pinSubmitBtn">Unlock</button>
                 </form>
-                <p class="auth-switch"><span id="authSwitchText">Don't have an account?</span> <a onclick="toggleAuthMode();" id="authSwitchLink">Sign Up</a></p>
-                <div class="auth-divider">or</div>
-                <button class="btn btn-secondary" style="width: 100%;" onclick="useLocalMode()">Use Offline Mode (No Account)</button>
+                <p id="pinSetupHint" class="auth-switch" style="display: none;">First time? Enter your desired PIN</p>
             </div>
         </div>
     </div>
@@ -367,7 +378,7 @@
             <div class="nav-divider"></div>
             <nav class="nav-section" style="margin-top: auto;">
                 <div class="nav-item" data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></div>
-                <div class="nav-item" onclick="signOut()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Sign Out</span></div>
+                <div class="nav-item" onclick="signOut()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Lock</span></div>
             </nav>
         </aside>
 
@@ -473,8 +484,22 @@
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         let db=null,auth=null,storage=null,currentUser=null,isOfflineMode=false,documents=[],currentFilter='all',currentScope='all',isSignUp=false;
         let settings={businessName:"Mrs Kim's Grill",currency:'AUD'};
+        let storedPinHash = null;
+        let isFirstTimeSetup = false;
         const currencySymbols={AUD:'$',USD:'$',KRW:'₩',EUR:'€',GBP:'£'};
         const categoryConfig={receipt:{icon:'🧾',label:'Receipts'},invoice:{icon:'📄',label:'Invoices/Bills'},bank:{icon:'🏦',label:'Bank Statements'},sales:{icon:'💰',label:'Sales/Revenue'},payroll:{icon:'👥',label:'Payroll'},personal:{icon:'👤',label:'Personal'},other:{icon:'📁',label:'Other'}};
+
+        // Simple hash function for PIN
+        function hashPin(pin) {
+            let hash = 0;
+            const str = pin + 'financehub_hugh_2024';
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash.toString();
+        }
 
         // Pre-configured Firebase for Hugh's Finance Tool
 const DEFAULT_FIREBASE_CONFIG = {
@@ -488,28 +513,207 @@ const DEFAULT_FIREBASE_CONFIG = {
 };
 
 document.addEventListener('DOMContentLoaded',()=>{
-  // Auto-initialize with default config
   initFirebaseWithConfig(DEFAULT_FIREBASE_CONFIG);
+  setupPinInputs();
   setupEventListeners();
 });
 
         function initFirebase(){try{const c=JSON.parse(document.getElementById('firebaseConfig').value.trim());localStorage.setItem('firebaseConfig',JSON.stringify(c));initFirebaseWithConfig(c)}catch(e){showToast('Invalid JSON','error')}}
 
-        function initFirebaseWithConfig(c){try{if(!firebase.apps.length)firebase.initializeApp(c);db=firebase.firestore();auth=firebase.auth();storage=firebase.storage();auth.onAuthStateChanged(u=>u?(currentUser=u,onUserSignedIn()):showLoginForm());showToast('Connected to Firebase!','success')}catch(e){showToast('Firebase error: '+e.message,'error');showLoginForm()}}
+        async function initFirebaseWithConfig(c){
+            try{
+                if(!firebase.apps.length)firebase.initializeApp(c);
+                db=firebase.firestore();
+                storage=firebase.storage();
+                
+                // Check for stored PIN
+                const pinDoc = await db.collection('config').doc('pin').get();
+                if(pinDoc.exists) {
+                    storedPinHash = pinDoc.data().hash;
+                    document.getElementById('authTitle').textContent = 'Enter PIN';
+                    document.getElementById('authSubtitle').textContent = 'Enter your 4-digit PIN to access';
+                    document.getElementById('pinSubmitBtn').textContent = 'Unlock';
+                } else {
+                    isFirstTimeSetup = true;
+                    document.getElementById('authTitle').textContent = 'Set Your PIN';
+                    document.getElementById('authSubtitle').textContent = 'Create a 4-digit PIN for quick access';
+                    document.getElementById('pinSubmitBtn').textContent = 'Set PIN';
+                    document.getElementById('pinSetupHint').style.display = 'block';
+                }
+                showToast('Connected!','success');
+            }catch(e){
+                console.error('Firebase error:', e);
+                // Fallback to localStorage
+                isOfflineMode = true;
+                storedPinHash = localStorage.getItem('pinHash');
+                if(!storedPinHash) {
+                    isFirstTimeSetup = true;
+                    document.getElementById('authTitle').textContent = 'Set Your PIN';
+                    document.getElementById('authSubtitle').textContent = 'Create a 4-digit PIN for quick access';
+                    document.getElementById('pinSubmitBtn').textContent = 'Set PIN';
+                }
+                showToast('Offline mode','warning');
+            }
+        }
 
-        function showLoginForm(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('appContainer').classList.add('hidden')}
+        function setupPinInputs() {
+            const pins = [1,2,3,4].map(i => document.getElementById('pin'+i));
+            
+            pins.forEach((input, idx) => {
+                input.addEventListener('input', (e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = val;
+                    
+                    if(val) {
+                        e.target.classList.add('filled');
+                        if(idx < 3) pins[idx+1].focus();
+                    } else {
+                        e.target.classList.remove('filled');
+                    }
+                    
+                    // Auto-submit when all filled
+                    if(pins.every(p => p.value)) {
+                        setTimeout(() => document.getElementById('pinForm').dispatchEvent(new Event('submit')), 100);
+                    }
+                });
+                
+                input.addEventListener('keydown', (e) => {
+                    if(e.key === 'Backspace' && !e.target.value && idx > 0) {
+                        pins[idx-1].focus();
+                        pins[idx-1].value = '';
+                        pins[idx-1].classList.remove('filled');
+                    }
+                });
+                
+                input.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0,4);
+                    paste.split('').forEach((char, i) => {
+                        if(pins[i]) {
+                            pins[i].value = char;
+                            pins[i].classList.add('filled');
+                        }
+                    });
+                    if(paste.length === 4) {
+                        setTimeout(() => document.getElementById('pinForm').dispatchEvent(new Event('submit')), 100);
+                    }
+                });
+            });
+            
+            // Focus first input
+            setTimeout(() => pins[0]?.focus(), 300);
+            
+            // Handle form submit
+            document.getElementById('pinForm')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const pin = pins.map(p => p.value).join('');
+                
+                if(pin.length !== 4) {
+                    showPinError();
+                    return;
+                }
+                
+                const pinHash = hashPin(pin);
+                
+                if(isFirstTimeSetup) {
+                    // Save new PIN
+                    try {
+                        if(!isOfflineMode) {
+                            await db.collection('config').doc('pin').set({ hash: pinHash });
+                        }
+                        localStorage.setItem('pinHash', pinHash);
+                        storedPinHash = pinHash;
+                        isFirstTimeSetup = false;
+                        showToast('PIN created!', 'success');
+                        onPinSuccess();
+                    } catch(err) {
+                        localStorage.setItem('pinHash', pinHash);
+                        storedPinHash = pinHash;
+                        onPinSuccess();
+                    }
+                } else {
+                    // Verify PIN
+                    if(pinHash === storedPinHash) {
+                        showToast('Welcome back!', 'success');
+                        onPinSuccess();
+                    } else {
+                        showPinError();
+                    }
+                }
+            });
+        }
+        
+        function showPinError() {
+            const pins = [1,2,3,4].map(i => document.getElementById('pin'+i));
+            document.getElementById('pinError').style.display = 'block';
+            pins.forEach(p => {
+                p.classList.add('error');
+                p.value = '';
+                p.classList.remove('filled');
+            });
+            setTimeout(() => {
+                pins.forEach(p => p.classList.remove('error'));
+                pins[0].focus();
+            }, 500);
+        }
+        
+        function onPinSuccess() {
+            currentUser = { uid: 'hugh', email: 'hugh@mrskimsgrill.com' };
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('userName').textContent = 'Hugh';
+            document.getElementById('userEmail').textContent = "Mrs Kim's Grill";
+            document.getElementById('userAvatar').textContent = 'H';
+            loadUserData();
+        }
 
-        function toggleAuthMode(){isSignUp=!isSignUp;document.getElementById('authTitle').textContent=isSignUp?'Create Account':'Welcome to FinanceHub';document.getElementById('authSubtitle').textContent=isSignUp?'Start managing your finances':'Sign in or create an account to get started';document.getElementById('authBtnText').textContent=isSignUp?'Sign Up':'Sign In';document.getElementById('authSwitchText').textContent=isSignUp?'Already have an account?':"Don't have an account?";document.getElementById('authSwitchLink').textContent=isSignUp?'Sign In':'Sign Up'}
+        function showLoginForm(){
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+            // Clear PIN inputs
+            [1,2,3,4].forEach(i => {
+                const p = document.getElementById('pin'+i);
+                if(p) { p.value = ''; p.classList.remove('filled','error'); }
+            });
+            document.getElementById('pinError').style.display = 'none';
+            setTimeout(() => document.getElementById('pin1')?.focus(), 300);
+        }
 
-        document.getElementById('authForm')?.addEventListener('submit',async e=>{e.preventDefault();const em=document.getElementById('authEmail').value,pw=document.getElementById('authPassword').value;try{isSignUp?await auth.createUserWithEmailAndPassword(em,pw):await auth.signInWithEmailAndPassword(em,pw);showToast(isSignUp?'Account created!':'Signed in!','success')}catch(er){showToast(er.message,'error')}});
+        function toggleAuthMode(){}
 
-        function onUserSignedIn(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('appContainer').classList.remove('hidden');const e=currentUser.email||'user@example.com';document.getElementById('userName').textContent=e.split('@')[0];document.getElementById('userEmail').textContent=e;document.getElementById('userAvatar').textContent=e.charAt(0).toUpperCase();loadUserData()}
+        // PIN authentication is handled in setupPinInputs()
 
-        async function loadUserData(){if(isOfflineMode){documents=JSON.parse(localStorage.getItem('financeDocuments')||'[]');settings=JSON.parse(localStorage.getItem('financeSettings')||'{}')}else{try{const s=await db.collection('users').doc(currentUser.uid).collection('documents').orderBy('createdAt','desc').get();documents=s.docs.map(d=>({id:d.id,...d.data()}));const sd=await db.collection('users').doc(currentUser.uid).get();if(sd.exists)settings={...settings,...sd.data()}}catch(e){}}document.getElementById('settingsBusinessName').value=settings.businessName||"Mrs Kim's Grill";document.getElementById('settingsCurrency').value=settings.currency||'AUD';updateUI()}
+        // Authentication handled by onPinSuccess()
 
-        async function signOut(){if(isOfflineMode){localStorage.removeItem('offlineMode');location.reload()}else{await auth.signOut();showToast('Signed out','success')}}
+        async function loadUserData(){
+            const userId = 'hugh';
+            if(isOfflineMode){
+                documents=JSON.parse(localStorage.getItem('financeDocuments')||'[]');
+                settings=JSON.parse(localStorage.getItem('financeSettings')||'{}');
+            }else{
+                try{
+                    const s=await db.collection('users').doc(userId).collection('documents').orderBy('createdAt','desc').get();
+                    documents=s.docs.map(d=>({id:d.id,...d.data()}));
+                    const sd=await db.collection('users').doc(userId).get();
+                    if(sd.exists)settings={...settings,...sd.data()};
+                }catch(e){
+                    console.error('Load error:', e);
+                    // Fallback to localStorage
+                    documents=JSON.parse(localStorage.getItem('financeDocuments')||'[]');
+                    settings=JSON.parse(localStorage.getItem('financeSettings')||'{}');
+                }
+            }
+            document.getElementById('settingsBusinessName').value=settings.businessName||"Mrs Kim's Grill";
+            document.getElementById('settingsCurrency').value=settings.currency||'AUD';
+            updateUI();
+        }
 
-        function useLocalMode(){isOfflineMode=true;localStorage.setItem('offlineMode','true');currentUser={uid:'local',email:'local@offline.mode'};document.getElementById('authScreen').classList.add('hidden');document.getElementById('appContainer').classList.remove('hidden');document.getElementById('userName').textContent='Offline Mode';document.getElementById('userEmail').textContent='Data stored locally';document.getElementById('userAvatar').textContent='💾';loadUserData();showToast('Using offline mode','warning')}
+        async function signOut(){
+            showLoginForm();
+            showToast('Locked','success');
+        }
+
+        // useLocalMode removed - PIN auth handles offline automatically
 
         function setupEventListeners(){document.querySelectorAll('.nav-item[data-page]').forEach(i=>i.addEventListener('click',()=>showPage(i.dataset.page)));document.querySelectorAll('.nav-item[data-filter]').forEach(i=>i.addEventListener('click',()=>{currentFilter=i.dataset.filter;showPage('documents');updateFilterTabs();renderDocuments()}));document.querySelectorAll('.scope-toggle').forEach(t=>t.querySelectorAll('.scope-btn').forEach(b=>b.addEventListener('click',()=>{t.querySelectorAll('.scope-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentScope=b.dataset.scope;updateUI()})));document.querySelectorAll('.filter-tabs').forEach(t=>t.querySelectorAll('.filter-tab').forEach(f=>f.addEventListener('click',()=>{t.querySelectorAll('.filter-tab').forEach(x=>x.classList.remove('active'));f.classList.add('active');currentFilter=f.dataset.filter;renderDocuments()})));const uz=document.getElementById('uploadZone'),fi=document.getElementById('fileInput');uz?.addEventListener('click',()=>fi?.click());uz?.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('dragover')});uz?.addEventListener('dragleave',()=>uz.classList.remove('dragover'));uz?.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('dragover');handleFiles(e.dataTransfer.files)});fi?.addEventListener('change',e=>{handleFiles(e.target.files);fi.value=''});document.getElementById('manualForm')?.addEventListener('submit',e=>{e.preventDefault();saveManualEntry()});document.getElementById('settingsBusinessName')?.addEventListener('change',saveSettings);document.getElementById('settingsCurrency')?.addEventListener('change',saveSettings)}
 
@@ -525,16 +729,16 @@ document.addEventListener('DOMContentLoaded',()=>{
 
         function classifyDocument(fn,ed){const n=fn.toLowerCase(),t=(ed.rawText||'').toLowerCase();let cat='other',sc='business',tt='expense',am=ed.amounts[0]||Math.floor(Math.random()*1000)+50;if(n.includes('receipt')||t.includes('receipt')||t.includes('total'))cat='receipt';else if(n.includes('invoice')||n.includes('bill')||t.includes('invoice'))cat='invoice';else if(n.includes('bank')||n.includes('statement')||t.includes('balance')){cat='bank';tt=Math.random()>0.5?'income':'expense'}else if(n.includes('sales')||n.includes('revenue')||t.includes('sales')){cat='sales';tt='income';am*=3}else if(n.includes('payroll')||n.includes('salary'))cat='payroll';else if(n.includes('personal')||n.includes('grocery')){cat='personal';sc='personal'}if(n.includes('personal')||n.includes('home'))sc='personal';if(n.includes('income')||n.includes('revenue')||t.includes('credit')||t.includes('deposit'))tt='income';return{category:cat,scope:sc,transactionType:tt,amount:am,description:fn.split('.')[0]}}
 
-        async function saveDocument(d){documents.unshift(d);if(isOfflineMode)localStorage.setItem('financeDocuments',JSON.stringify(documents));else{try{await db.collection('users').doc(currentUser.uid).collection('documents').doc(d.id).set(d)}catch(e){}}updateUI()}
+        async function saveDocument(d){documents.unshift(d);localStorage.setItem('financeDocuments',JSON.stringify(documents));if(!isOfflineMode){try{await db.collection('users').doc('hugh').collection('documents').doc(d.id).set(d)}catch(e){console.error('Save error:',e)}}updateUI()}
 
-        async function clearAllDocuments(){if(!confirm('Delete ALL documents? This cannot be undone.'))return;if(isOfflineMode){documents=[];localStorage.setItem('financeDocuments','[]')}else{try{const b=db.batch();const s=await db.collection('users').doc(currentUser.uid).collection('documents').get();s.docs.forEach(x=>b.delete(x.ref));await b.commit();documents=[]}catch(e){}}updateUI();showToast('All documents deleted','success')}
+        async function clearAllDocuments(){if(!confirm('Delete ALL documents? This cannot be undone.'))return;documents=[];localStorage.setItem('financeDocuments','[]');if(!isOfflineMode){try{const b=db.batch();const s=await db.collection('users').doc('hugh').collection('documents').get();s.docs.forEach(x=>b.delete(x.ref));await b.commit()}catch(e){console.error('Clear error:',e)}}updateUI();showToast('All documents deleted','success')}
 
         function openManualModal(){document.getElementById('manualModal').classList.add('active');document.getElementById('entryDate').value=new Date().toISOString().split('T')[0]}
         function closeManualModal(){document.getElementById('manualModal').classList.remove('active')}
 
         async function saveManualEntry(){const d={id:Date.now().toString()+Math.random().toString(36).substr(2,9),name:document.getElementById('entryDescription').value,description:document.getElementById('entryDescription').value,category:document.getElementById('entryCategory').value,scope:document.getElementById('entryScope').value,amount:parseFloat(document.getElementById('entryAmount').value),transactionType:document.getElementById('entryType').value,status:document.getElementById('entryCategory').value==='invoice'?'pending':'processed',date:document.getElementById('entryDate').value,createdAt:new Date().toISOString(),notes:document.getElementById('entryNotes').value,manual:true};await saveDocument(d);closeManualModal();document.getElementById('manualForm').reset();showToast('Transaction added!','success')}
 
-        async function saveSettings(){settings.businessName=document.getElementById('settingsBusinessName').value;settings.currency=document.getElementById('settingsCurrency').value;if(isOfflineMode)localStorage.setItem('financeSettings',JSON.stringify(settings));else{try{await db.collection('users').doc(currentUser.uid).set(settings,{merge:true})}catch(e){}}updateUI();showToast('Settings saved','success')}
+        async function saveSettings(){settings.businessName=document.getElementById('settingsBusinessName').value;settings.currency=document.getElementById('settingsCurrency').value;localStorage.setItem('financeSettings',JSON.stringify(settings));if(!isOfflineMode){try{await db.collection('users').doc('hugh').set(settings,{merge:true})}catch(e){console.error('Settings save error:',e)}}updateUI();showToast('Settings saved','success')}
 
         function updateUI(){updateStats();renderDocuments();renderCategories();updateAnalysis();document.getElementById('navDocCount').textContent=documents.length}
 
