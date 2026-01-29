@@ -272,11 +272,10 @@
         .auth-switch { margin-top: 24px; font-size: 14px; color: var(--text-secondary); }
         .auth-switch a { color: var(--accent-orange); text-decoration: none; font-weight: 500; cursor: pointer; }
         .auth-switch a:hover { text-decoration: underline; }
-        .pin-input-container { display: flex; justify-content: center; gap: 12px; margin: 24px 0; }
-        .pin-input { width: 60px; height: 70px; text-align: center; font-size: 28px; font-weight: 700; background: var(--bg-input); border: 2px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); transition: all 0.2s; }
-        .pin-input:focus { outline: none; border-color: var(--accent-orange); box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2); }
-        .pin-input.filled { border-color: var(--accent-green); background: rgba(0, 214, 143, 0.1); }
-        .pin-input.error { border-color: var(--accent-red); animation: shake 0.5s; }
+        .pin-single-input { width: 100%; max-width: 200px; margin: 24px auto; display: block; text-align: center; font-size: 32px; font-weight: 700; letter-spacing: 12px; padding: 16px 20px; background: var(--bg-input); border: 2px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); transition: all 0.2s; }
+        .pin-single-input:focus { outline: none; border-color: var(--accent-orange); box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2); }
+        .pin-single-input::placeholder { letter-spacing: 8px; opacity: 0.3; }
+        .pin-single-input.error { border-color: var(--accent-red); animation: shake 0.5s; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
         .analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
         .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
@@ -331,21 +330,14 @@
                 <button class="btn btn-secondary" style="width: 100%;" onclick="useLocalMode()">Use Offline Mode</button>
             </div>
             <div id="loginSection">
-                <h3 class="auth-title" id="authTitle">Enter PIN</h3>
-                <p class="auth-subtitle" id="authSubtitle">Enter your 4-digit PIN to access</p>
+                <h3 class="auth-title">Enter PIN</h3>
+                <p class="auth-subtitle">Enter your 4-digit PIN to access</p>
                 <form id="pinForm">
                     <div class="form-group">
-                        <div class="pin-input-container">
-                            <input type="password" class="pin-input" id="pin1" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-                            <input type="password" class="pin-input" id="pin2" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-                            <input type="password" class="pin-input" id="pin3" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-                            <input type="password" class="pin-input" id="pin4" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-                        </div>
+                        <input type="password" class="pin-single-input" id="pinInput" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="••••">
                     </div>
-                    <p id="pinError" style="color: var(--accent-red); font-size: 13px; margin-bottom: 16px; display: none;">Incorrect PIN. Try again.</p>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;" id="pinSubmitBtn">Unlock</button>
+                    <p id="pinError" style="color: var(--accent-red); font-size: 13px; text-align: center; display: none;">Incorrect PIN</p>
                 </form>
-                <p id="pinSetupHint" class="auth-switch" style="display: none;">First time? Enter your desired PIN</p>
             </div>
         </div>
     </div>
@@ -482,24 +474,11 @@
     <div class="toast" id="toast"><span id="toastMessage">Notification</span></div>
 
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-        let db=null,auth=null,storage=null,currentUser=null,isOfflineMode=false,documents=[],currentFilter='all',currentScope='all',isSignUp=false;
+        let db=null,auth=null,storage=null,currentUser=null,isOfflineMode=false,documents=[],currentFilter='all',currentScope='all';
         let settings={businessName:"Mrs Kim's Grill",currency:'AUD'};
-        let storedPinHash = null;
-        let isFirstTimeSetup = false;
+        const FIXED_PIN = '5007';
         const currencySymbols={AUD:'$',USD:'$',KRW:'₩',EUR:'€',GBP:'£'};
         const categoryConfig={receipt:{icon:'🧾',label:'Receipts'},invoice:{icon:'📄',label:'Invoices/Bills'},bank:{icon:'🏦',label:'Bank Statements'},sales:{icon:'💰',label:'Sales/Revenue'},payroll:{icon:'👥',label:'Payroll'},personal:{icon:'👤',label:'Personal'},other:{icon:'📁',label:'Other'}};
-
-        // Simple hash function for PIN
-        function hashPin(pin) {
-            let hash = 0;
-            const str = pin + 'financehub_hugh_2024';
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            return hash.toString();
-        }
 
         // Pre-configured Firebase for Hugh's Finance Tool
 const DEFAULT_FIREBASE_CONFIG = {
@@ -525,135 +504,45 @@ document.addEventListener('DOMContentLoaded',()=>{
                 if(!firebase.apps.length)firebase.initializeApp(c);
                 db=firebase.firestore();
                 storage=firebase.storage();
-                
-                // Check for stored PIN
-                const pinDoc = await db.collection('config').doc('pin').get();
-                if(pinDoc.exists) {
-                    storedPinHash = pinDoc.data().hash;
-                    document.getElementById('authTitle').textContent = 'Enter PIN';
-                    document.getElementById('authSubtitle').textContent = 'Enter your 4-digit PIN to access';
-                    document.getElementById('pinSubmitBtn').textContent = 'Unlock';
-                } else {
-                    isFirstTimeSetup = true;
-                    document.getElementById('authTitle').textContent = 'Set Your PIN';
-                    document.getElementById('authSubtitle').textContent = 'Create a 4-digit PIN for quick access';
-                    document.getElementById('pinSubmitBtn').textContent = 'Set PIN';
-                    document.getElementById('pinSetupHint').style.display = 'block';
-                }
                 showToast('Connected!','success');
             }catch(e){
                 console.error('Firebase error:', e);
-                // Fallback to localStorage
                 isOfflineMode = true;
-                storedPinHash = localStorage.getItem('pinHash');
-                if(!storedPinHash) {
-                    isFirstTimeSetup = true;
-                    document.getElementById('authTitle').textContent = 'Set Your PIN';
-                    document.getElementById('authSubtitle').textContent = 'Create a 4-digit PIN for quick access';
-                    document.getElementById('pinSubmitBtn').textContent = 'Set PIN';
-                }
                 showToast('Offline mode','warning');
             }
         }
 
         function setupPinInputs() {
-            const pins = [1,2,3,4].map(i => document.getElementById('pin'+i));
+            const pinInput = document.getElementById('pinInput');
             
-            pins.forEach((input, idx) => {
-                input.addEventListener('input', (e) => {
-                    const val = e.target.value.replace(/[^0-9]/g, '');
-                    e.target.value = val;
-                    
-                    if(val) {
-                        e.target.classList.add('filled');
-                        if(idx < 3) pins[idx+1].focus();
-                    } else {
-                        e.target.classList.remove('filled');
-                    }
-                    
-                    // Auto-submit when all filled
-                    if(pins.every(p => p.value)) {
-                        setTimeout(() => document.getElementById('pinForm').dispatchEvent(new Event('submit')), 100);
-                    }
-                });
+            // Only allow numbers and auto-check on 4 digits
+            pinInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
                 
-                input.addEventListener('keydown', (e) => {
-                    if(e.key === 'Backspace' && !e.target.value && idx > 0) {
-                        pins[idx-1].focus();
-                        pins[idx-1].value = '';
-                        pins[idx-1].classList.remove('filled');
-                    }
-                });
-                
-                input.addEventListener('paste', (e) => {
-                    e.preventDefault();
-                    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0,4);
-                    paste.split('').forEach((char, i) => {
-                        if(pins[i]) {
-                            pins[i].value = char;
-                            pins[i].classList.add('filled');
-                        }
-                    });
-                    if(paste.length === 4) {
-                        setTimeout(() => document.getElementById('pinForm').dispatchEvent(new Event('submit')), 100);
-                    }
-                });
-            });
-            
-            // Focus first input
-            setTimeout(() => pins[0]?.focus(), 300);
-            
-            // Handle form submit
-            document.getElementById('pinForm')?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const pin = pins.map(p => p.value).join('');
-                
-                if(pin.length !== 4) {
-                    showPinError();
-                    return;
-                }
-                
-                const pinHash = hashPin(pin);
-                
-                if(isFirstTimeSetup) {
-                    // Save new PIN
-                    try {
-                        if(!isOfflineMode) {
-                            await db.collection('config').doc('pin').set({ hash: pinHash });
-                        }
-                        localStorage.setItem('pinHash', pinHash);
-                        storedPinHash = pinHash;
-                        isFirstTimeSetup = false;
-                        showToast('PIN created!', 'success');
-                        onPinSuccess();
-                    } catch(err) {
-                        localStorage.setItem('pinHash', pinHash);
-                        storedPinHash = pinHash;
-                        onPinSuccess();
-                    }
-                } else {
-                    // Verify PIN
-                    if(pinHash === storedPinHash) {
-                        showToast('Welcome back!', 'success');
+                // Auto-login when 4 digits entered
+                if(e.target.value.length === 4) {
+                    if(e.target.value === FIXED_PIN) {
+                        showToast('Welcome!', 'success');
                         onPinSuccess();
                     } else {
                         showPinError();
                     }
                 }
             });
+            
+            // Focus input on load
+            setTimeout(() => pinInput?.focus(), 300);
         }
         
         function showPinError() {
-            const pins = [1,2,3,4].map(i => document.getElementById('pin'+i));
+            const pinInput = document.getElementById('pinInput');
             document.getElementById('pinError').style.display = 'block';
-            pins.forEach(p => {
-                p.classList.add('error');
-                p.value = '';
-                p.classList.remove('filled');
-            });
+            pinInput.classList.add('error');
+            pinInput.value = '';
             setTimeout(() => {
-                pins.forEach(p => p.classList.remove('error'));
-                pins[0].focus();
+                pinInput.classList.remove('error');
+                document.getElementById('pinError').style.display = 'none';
+                pinInput.focus();
             }, 500);
         }
         
@@ -670,13 +559,13 @@ document.addEventListener('DOMContentLoaded',()=>{
         function showLoginForm(){
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('appContainer').classList.add('hidden');
-            // Clear PIN inputs
-            [1,2,3,4].forEach(i => {
-                const p = document.getElementById('pin'+i);
-                if(p) { p.value = ''; p.classList.remove('filled','error'); }
-            });
+            const pinInput = document.getElementById('pinInput');
+            if(pinInput) {
+                pinInput.value = '';
+                pinInput.classList.remove('error');
+            }
             document.getElementById('pinError').style.display = 'none';
-            setTimeout(() => document.getElementById('pin1')?.focus(), 300);
+            setTimeout(() => pinInput?.focus(), 300);
         }
 
         function toggleAuthMode(){}
