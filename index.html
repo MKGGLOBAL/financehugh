@@ -306,7 +306,7 @@
                 <div class="logo-icon">💰</div>
                 <div class="logo-text">Finance<span>Hub</span></div>
             </div>
-            <div id="configSection">
+            <div id="configSection" class="hidden">
                 <h3 class="auth-title">Firebase Setup</h3>
                 <p class="auth-subtitle">Enter your Firebase configuration to get started</p>
                 <div class="form-group" style="text-align: left;">
@@ -324,15 +324,17 @@
                 <div class="auth-divider">or</div>
                 <button class="btn btn-secondary" style="width: 100%;" onclick="useLocalMode()">Use Offline Mode</button>
             </div>
-            <div id="loginSection" class="hidden">
-                <h3 class="auth-title" id="authTitle">Sign In</h3>
-                <p class="auth-subtitle" id="authSubtitle">Access your financial dashboard</p>
+            <div id="loginSection">
+                <h3 class="auth-title" id="authTitle">Welcome to FinanceHub</h3>
+                <p class="auth-subtitle" id="authSubtitle">Sign in or create an account to get started</p>
                 <form id="authForm">
                     <div class="form-group" style="text-align: left;"><label class="form-label">Email</label><input type="email" class="form-input" id="authEmail" placeholder="you@example.com" required></div>
                     <div class="form-group" style="text-align: left;"><label class="form-label">Password</label><input type="password" class="form-input" id="authPassword" placeholder="••••••••" required></div>
                     <button type="submit" class="btn btn-primary" style="width: 100%;"><span id="authBtnText">Sign In</span></button>
                 </form>
                 <p class="auth-switch"><span id="authSwitchText">Don't have an account?</span> <a onclick="toggleAuthMode();" id="authSwitchLink">Sign Up</a></p>
+                <div class="auth-divider">or</div>
+                <button class="btn btn-secondary" style="width: 100%;" onclick="useLocalMode()">Use Offline Mode (No Account)</button>
             </div>
         </div>
     </div>
@@ -343,7 +345,7 @@
             <div class="logo"><div class="logo-icon">💰</div><div class="logo-text">Finance<span>Hub</span></div></div>
             <div class="user-profile" onclick="showPage('settings')">
                 <div class="user-avatar" id="userAvatar">U</div>
-                <div class="user-info"><div class="user-name" id="userName">User</div><div class="user-email" id="userEmail">user@example.com</div></div>
+                <div class="user-info"><div class="user-name" id="userName">User</div><div class="user-email" id="userEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1a6f697f685a7f627b776a767f34797577">[email&#160;protected]</a></div></div>
             </div>
             <nav class="nav-section">
                 <div class="nav-label">Main Menu</div>
@@ -468,21 +470,36 @@
 
     <div class="toast" id="toast"><span id="toastMessage">Notification</span></div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         let db=null,auth=null,storage=null,currentUser=null,isOfflineMode=false,documents=[],currentFilter='all',currentScope='all',isSignUp=false;
         let settings={businessName:"Mrs Kim's Grill",currency:'AUD'};
         const currencySymbols={AUD:'$',USD:'$',KRW:'₩',EUR:'€',GBP:'£'};
         const categoryConfig={receipt:{icon:'🧾',label:'Receipts'},invoice:{icon:'📄',label:'Invoices/Bills'},bank:{icon:'🏦',label:'Bank Statements'},sales:{icon:'💰',label:'Sales/Revenue'},payroll:{icon:'👥',label:'Payroll'},personal:{icon:'👤',label:'Personal'},other:{icon:'📁',label:'Other'}};
 
-        document.addEventListener('DOMContentLoaded',()=>{const c=localStorage.getItem('firebaseConfig');if(c){try{initFirebaseWithConfig(JSON.parse(c))}catch(e){}}if(localStorage.getItem('offlineMode')==='true')useLocalMode();setupEventListeners()});
+        // Pre-configured Firebase for Hugh's Finance Tool
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCJImX9qW95kBuScldawlk0OfYv8Qe7hzI",
+  authDomain: "finance-tool-for-hugh.firebaseapp.com",
+  projectId: "finance-tool-for-hugh",
+  storageBucket: "finance-tool-for-hugh.firebasestorage.app",
+  messagingSenderId: "886869793656",
+  appId: "1:886869793656:web:425b1ffdaebeb6c646868d",
+  measurementId: "G-CK8KBRCDW4"
+};
+
+document.addEventListener('DOMContentLoaded',()=>{
+  // Auto-initialize with default config
+  initFirebaseWithConfig(DEFAULT_FIREBASE_CONFIG);
+  setupEventListeners();
+});
 
         function initFirebase(){try{const c=JSON.parse(document.getElementById('firebaseConfig').value.trim());localStorage.setItem('firebaseConfig',JSON.stringify(c));initFirebaseWithConfig(c)}catch(e){showToast('Invalid JSON','error')}}
 
-        function initFirebaseWithConfig(c){try{if(!firebase.apps.length)firebase.initializeApp(c);db=firebase.firestore();auth=firebase.auth();storage=firebase.storage();auth.onAuthStateChanged(u=>u?(currentUser=u,onUserSignedIn()):showLoginForm());document.getElementById('configSection').classList.add('hidden');document.getElementById('loginSection').classList.remove('hidden');showToast('Firebase connected!','success')}catch(e){showToast('Firebase error: '+e.message,'error')}}
+        function initFirebaseWithConfig(c){try{if(!firebase.apps.length)firebase.initializeApp(c);db=firebase.firestore();auth=firebase.auth();storage=firebase.storage();auth.onAuthStateChanged(u=>u?(currentUser=u,onUserSignedIn()):showLoginForm());showToast('Connected to Firebase!','success')}catch(e){showToast('Firebase error: '+e.message,'error');showLoginForm()}}
 
-        function showLoginForm(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('appContainer').classList.add('hidden');document.getElementById('configSection').classList.add('hidden');document.getElementById('loginSection').classList.remove('hidden')}
+        function showLoginForm(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('appContainer').classList.add('hidden')}
 
-        function toggleAuthMode(){isSignUp=!isSignUp;document.getElementById('authTitle').textContent=isSignUp?'Create Account':'Sign In';document.getElementById('authSubtitle').textContent=isSignUp?'Start managing your finances':'Access your financial dashboard';document.getElementById('authBtnText').textContent=isSignUp?'Sign Up':'Sign In';document.getElementById('authSwitchText').textContent=isSignUp?'Already have an account?':"Don't have an account?";document.getElementById('authSwitchLink').textContent=isSignUp?'Sign In':'Sign Up'}
+        function toggleAuthMode(){isSignUp=!isSignUp;document.getElementById('authTitle').textContent=isSignUp?'Create Account':'Welcome to FinanceHub';document.getElementById('authSubtitle').textContent=isSignUp?'Start managing your finances':'Sign in or create an account to get started';document.getElementById('authBtnText').textContent=isSignUp?'Sign Up':'Sign In';document.getElementById('authSwitchText').textContent=isSignUp?'Already have an account?':"Don't have an account?";document.getElementById('authSwitchLink').textContent=isSignUp?'Sign In':'Sign Up'}
 
         document.getElementById('authForm')?.addEventListener('submit',async e=>{e.preventDefault();const em=document.getElementById('authEmail').value,pw=document.getElementById('authPassword').value;try{isSignUp?await auth.createUserWithEmailAndPassword(em,pw):await auth.signInWithEmailAndPassword(em,pw);showToast(isSignUp?'Account created!':'Signed in!','success')}catch(er){showToast(er.message,'error')}});
 
@@ -540,9 +557,4 @@
 
         function importDataPrompt(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=async e=>{const r=new FileReader();r.onload=async ev=>{try{const d=JSON.parse(ev.target.result);if(d.documents)for(const x of d.documents)await saveDocument(x);if(d.settings){settings={...settings,...d.settings};await saveSettings()}showToast('Data imported!','success')}catch(er){showToast('Import failed','error')}};r.readAsText(e.target.files[0])};i.click()}
 
-        function showToast(m,t='success'){const ts=document.getElementById('toast');document.getElementById('toastMessage').textContent=m;ts.className=`toast ${t} show`;setTimeout(()=>ts.classList.remove('show'),3500)}
-
-        if(typeof pdfjsLib!=='undefined')pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
-</body>
-</html>
+        function showToast(m,t='success'){const ts=document.getElementById('toast');document.getElementById('toastMessage').textContent=m;ts.className=`toast ${t} show`;setTimeout
