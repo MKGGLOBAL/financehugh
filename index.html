@@ -272,11 +272,6 @@
         .auth-switch { margin-top: 24px; font-size: 14px; color: var(--text-secondary); }
         .auth-switch a { color: var(--accent-orange); text-decoration: none; font-weight: 500; cursor: pointer; }
         .auth-switch a:hover { text-decoration: underline; }
-        .pin-single-input { width: 100%; max-width: 200px; margin: 24px auto; display: block; text-align: center; font-size: 32px; font-weight: 700; letter-spacing: 12px; padding: 16px 20px; background: var(--bg-input); border: 2px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); transition: all 0.2s; }
-        .pin-single-input:focus { outline: none; border-color: var(--accent-orange); box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2); }
-        .pin-single-input::placeholder { letter-spacing: 8px; opacity: 0.3; }
-        .pin-single-input.error { border-color: var(--accent-red); animation: shake 0.5s; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
         .analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
         .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
         .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 24px; }
@@ -304,8 +299,8 @@
     </style>
 </head>
 <body>
-    <!-- Auth Screen -->
-    <div id="authScreen" class="auth-screen">
+    <!-- Auth Screen - Hidden -->
+    <div id="authScreen" class="auth-screen hidden">
         <div class="auth-card">
             <div class="auth-logo">
                 <div class="logo-icon">💰</div>
@@ -343,7 +338,7 @@
     </div>
 
     <!-- Main App -->
-    <div id="appContainer" class="app hidden">
+    <div id="appContainer" class="app">
         <aside class="sidebar">
             <div class="logo"><div class="logo-icon">💰</div><div class="logo-text">Finance<span>Hub</span></div></div>
             <div class="user-profile" onclick="showPage('settings')">
@@ -370,7 +365,6 @@
             <div class="nav-divider"></div>
             <nav class="nav-section" style="margin-top: auto;">
                 <div class="nav-item" data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></div>
-                <div class="nav-item" onclick="signOut()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Lock</span></div>
             </nav>
         </aside>
 
@@ -476,7 +470,6 @@
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         let db=null,auth=null,storage=null,currentUser=null,isOfflineMode=false,documents=[],currentFilter='all',currentScope='all';
         let settings={businessName:"Mrs Kim's Grill",currency:'AUD'};
-        const FIXED_PIN = '5007';
         const currencySymbols={AUD:'$',USD:'$',KRW:'₩',EUR:'€',GBP:'£'};
         const categoryConfig={receipt:{icon:'🧾',label:'Receipts'},invoice:{icon:'📄',label:'Invoices/Bills'},bank:{icon:'🏦',label:'Bank Statements'},sales:{icon:'💰',label:'Sales/Revenue'},payroll:{icon:'👥',label:'Payroll'},personal:{icon:'👤',label:'Personal'},other:{icon:'📁',label:'Other'}};
 
@@ -493,7 +486,12 @@ const DEFAULT_FIREBASE_CONFIG = {
 
 document.addEventListener('DOMContentLoaded',()=>{
   initFirebaseWithConfig(DEFAULT_FIREBASE_CONFIG);
-  setupPinInputs();
+  // Set user info directly
+  document.getElementById('userName').textContent = 'Hugh';
+  document.getElementById('userEmail').textContent = "Mrs Kim's Grill";
+  document.getElementById('userAvatar').textContent = 'H';
+  currentUser = { uid: 'hugh', email: 'hugh@mrskimsgrill.com' };
+  loadUserData();
   setupEventListeners();
 });
 
@@ -512,68 +510,6 @@ document.addEventListener('DOMContentLoaded',()=>{
             }
         }
 
-        function setupPinInputs() {
-            const pinInput = document.getElementById('pinInput');
-            
-            // Only allow numbers and auto-check on 4 digits
-            pinInput.addEventListener('input', (e) => {
-                e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                
-                // Auto-login when 4 digits entered
-                if(e.target.value.length === 4) {
-                    if(e.target.value === FIXED_PIN) {
-                        showToast('Welcome!', 'success');
-                        onPinSuccess();
-                    } else {
-                        showPinError();
-                    }
-                }
-            });
-            
-            // Focus input on load
-            setTimeout(() => pinInput?.focus(), 300);
-        }
-        
-        function showPinError() {
-            const pinInput = document.getElementById('pinInput');
-            document.getElementById('pinError').style.display = 'block';
-            pinInput.classList.add('error');
-            pinInput.value = '';
-            setTimeout(() => {
-                pinInput.classList.remove('error');
-                document.getElementById('pinError').style.display = 'none';
-                pinInput.focus();
-            }, 500);
-        }
-        
-        function onPinSuccess() {
-            currentUser = { uid: 'hugh', email: 'hugh@mrskimsgrill.com' };
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('appContainer').classList.remove('hidden');
-            document.getElementById('userName').textContent = 'Hugh';
-            document.getElementById('userEmail').textContent = "Mrs Kim's Grill";
-            document.getElementById('userAvatar').textContent = 'H';
-            loadUserData();
-        }
-
-        function showLoginForm(){
-            document.getElementById('authScreen').classList.remove('hidden');
-            document.getElementById('appContainer').classList.add('hidden');
-            const pinInput = document.getElementById('pinInput');
-            if(pinInput) {
-                pinInput.value = '';
-                pinInput.classList.remove('error');
-            }
-            document.getElementById('pinError').style.display = 'none';
-            setTimeout(() => pinInput?.focus(), 300);
-        }
-
-        function toggleAuthMode(){}
-
-        // PIN authentication is handled in setupPinInputs()
-
-        // Authentication handled by onPinSuccess()
-
         async function loadUserData(){
             const userId = 'hugh';
             if(isOfflineMode){
@@ -587,7 +523,6 @@ document.addEventListener('DOMContentLoaded',()=>{
                     if(sd.exists)settings={...settings,...sd.data()};
                 }catch(e){
                     console.error('Load error:', e);
-                    // Fallback to localStorage
                     documents=JSON.parse(localStorage.getItem('financeDocuments')||'[]');
                     settings=JSON.parse(localStorage.getItem('financeSettings')||'{}');
                 }
@@ -596,13 +531,6 @@ document.addEventListener('DOMContentLoaded',()=>{
             document.getElementById('settingsCurrency').value=settings.currency||'AUD';
             updateUI();
         }
-
-        async function signOut(){
-            showLoginForm();
-            showToast('Locked','success');
-        }
-
-        // useLocalMode removed - PIN auth handles offline automatically
 
         function setupEventListeners(){document.querySelectorAll('.nav-item[data-page]').forEach(i=>i.addEventListener('click',()=>showPage(i.dataset.page)));document.querySelectorAll('.nav-item[data-filter]').forEach(i=>i.addEventListener('click',()=>{currentFilter=i.dataset.filter;showPage('documents');updateFilterTabs();renderDocuments()}));document.querySelectorAll('.scope-toggle').forEach(t=>t.querySelectorAll('.scope-btn').forEach(b=>b.addEventListener('click',()=>{t.querySelectorAll('.scope-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentScope=b.dataset.scope;updateUI()})));document.querySelectorAll('.filter-tabs').forEach(t=>t.querySelectorAll('.filter-tab').forEach(f=>f.addEventListener('click',()=>{t.querySelectorAll('.filter-tab').forEach(x=>x.classList.remove('active'));f.classList.add('active');currentFilter=f.dataset.filter;renderDocuments()})));const uz=document.getElementById('uploadZone'),fi=document.getElementById('fileInput');uz?.addEventListener('click',()=>fi?.click());uz?.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('dragover')});uz?.addEventListener('dragleave',()=>uz.classList.remove('dragover'));uz?.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('dragover');handleFiles(e.dataTransfer.files)});fi?.addEventListener('change',e=>{handleFiles(e.target.files);fi.value=''});document.getElementById('manualForm')?.addEventListener('submit',e=>{e.preventDefault();saveManualEntry()});document.getElementById('settingsBusinessName')?.addEventListener('change',saveSettings);document.getElementById('settingsCurrency')?.addEventListener('change',saveSettings)}
 
